@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import MessageBubble from "@/components/chat/message-bubble";
 import InputForm from "@/components/chat/input-form";
 import TypingIndicator from "@/components/chat/typing-indicator";
+import ChatSidebar from "@/components/chat/chat-sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@shared/schema";
 
@@ -32,19 +33,22 @@ export default function Chat() {
   });
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full p-4">
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
-          ))}
-          {mutation.isPending && <TypingIndicator />}
-        </ScrollArea>
+    <div className="flex h-screen bg-background">
+      <ChatSidebar messages={messages} />
+      <div className="flex-1 flex flex-col">
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full p-4">
+            {messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+            {mutation.isPending && <TypingIndicator />}
+          </ScrollArea>
+        </div>
+        <InputForm 
+          onSubmit={(content) => mutation.mutate(content)}
+          isLoading={mutation.isPending}
+        />
       </div>
-      <InputForm 
-        onSubmit={(content) => mutation.mutate(content)}
-        isLoading={mutation.isPending}
-      />
     </div>
   );
 }
