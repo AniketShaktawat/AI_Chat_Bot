@@ -8,11 +8,12 @@ import TypingIndicator from "@/components/chat/typing-indicator";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message, Conversation } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Chat() {
   const { toast } = useToast();
   const [activeConversationId, setActiveConversationId] = useState<number>();
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ['/api/conversations'],
@@ -61,10 +62,20 @@ export default function Chat() {
     }
   });
 
-  // Create a new chat if there are no conversations
-  if (conversations.length === 0 && !newChatMutation.isPending) {
-    newChatMutation.mutate();
-  }
+  // Create a new chat only once on initial load if no conversations exist
+  useEffect(() => {
+    if (!initialLoadDone && conversations.length === 0 && !newChatMutation.isPending) {
+      setInitialLoadDone(true);
+      newChatMutation.mutate();
+    }
+  }, [conversations, initialLoadDone, newChatMutation]);
+
+  // Set active conversation if none is selected
+  useEffect(() => {
+    if (!activeConversationId && conversations.length > 0) {
+      setActiveConversationId(conversations[0].id);
+    }
+  }, [activeConversationId, conversations]);
 
   return (
     <div className="flex h-screen bg-background">
