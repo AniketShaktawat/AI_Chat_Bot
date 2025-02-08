@@ -2,89 +2,42 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import OpenAI from "openai";
-import { insertMessageSchema, insertConversationSchema } from "@shared/schema";
+import { insertMessageSchema } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export function registerRoutes(app: Express): Server {
-  app.get("/api/conversations", async (_req, res) => {
-    const conversations = await storage.getConversations();
-    res.json(conversations);
-  });
-
-  app.post("/api/conversations", async (_req, res) => {
-    const conversation = await storage.createConversation({
-      title: "New Chat",
-    });
-    res.json(conversation);
-  });
-
-  app.get("/api/conversations/:id/messages", async (req, res) => {
-    const conversationId = parseInt(req.params.id);
-    const messages = await storage.getMessages(conversationId);
+  app.get("/api/messages", async (_req, res) => {
+    const messages = await storage.getMessages();
     res.json(messages);
   });
 
-  app.post("/api/conversations/:id/messages", async (req, res) => {
+  app.post("/api/messages", async (req, res) => {
     try {
-      const conversationId = parseInt(req.params.id);
-
-      if (!req.body.content) {
-        throw new Error("Message content is required");
-      }
-
-      // Save user message first
       const userMessage = insertMessageSchema.parse({
-        conversationId,
         role: "user",
         content: req.body.content,
       });
-
       await storage.createMessage(userMessage);
 
-      let messages = await storage.getMessages(conversationId);
-
-      try {
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: messages.map(m => ({
-            role: m.role as any,
-            content: m.content,
-          })),
-          temperature: 0.7,
-          max_tokens: 1000,
-        });
-
-        if (!completion.choices[0]?.message?.content) {
-          throw new Error("No response from OpenAI");
-        }
-
-        const assistantMessage = insertMessageSchema.parse({
-          conversationId,
-          role: "assistant",
-          content: completion.choices[0].message.content,
-        });
-
-        const savedAssistantMessage = await storage.createMessage(assistantMessage);
-        res.json(savedAssistantMessage);
-      } catch (error: any) {
-        console.error("OpenAI API Error:", error.message);
-
-        const errorMessage = insertMessageSchema.parse({
-          conversationId,
-          role: "assistant",
-          content: "I apologize, but I encountered an error while processing your request. Please try again.",
-        });
-
-        const savedErrorMessage = await storage.createMessage(errorMessage);
-        res.json(savedErrorMessage);
-      }
-    } catch (error: any) {
-      console.error("Request Error:", error.message);
-      res.status(400).json({ 
-        message: error.message || "An error occurred while processing your request" 
+      const messages = await storage.getMessages();
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: messages.map(m => ({
+          role: m.role,
+          content: m.content,
+        })),
       });
+
+      const assistantMessage = {
+        role: "assistant",
+        content: response.choices[0].message.content || "",
+      };
+      const savedMessage = await storage.createMessage(assistantMessage);
+      res.json(savedMessage);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
     }
   });
 

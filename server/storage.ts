@@ -1,51 +1,26 @@
-import { 
-  type Message, 
-  type InsertMessage,
-  type Conversation,
-  type InsertConversation 
-} from "@shared/schema";
+import { messages, type Message, type InsertMessage } from "@shared/schema";
 
 export interface IStorage {
-  getConversations(): Promise<Conversation[]>;
-  getMessages(conversationId: number): Promise<Message[]>;
-  createConversation(conversation: InsertConversation): Promise<Conversation>;
+  getMessages(): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
 }
 
 export class MemStorage implements IStorage {
-  private conversations: Conversation[];
   private messages: Message[];
-  private currentConversationId: number;
-  private currentMessageId: number;
+  private currentId: number;
 
   constructor() {
-    this.conversations = [];
     this.messages = [];
-    this.currentConversationId = 1;
-    this.currentMessageId = 1;
+    this.currentId = 1;
   }
 
-  async getConversations(): Promise<Conversation[]> {
-    return this.conversations;
-  }
-
-  async getMessages(conversationId: number): Promise<Message[]> {
-    return this.messages.filter(m => m.conversationId === conversationId);
-  }
-
-  async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
-    const conversation: Conversation = {
-      id: this.currentConversationId++,
-      ...insertConversation,
-      createdAt: new Date(),
-    };
-    this.conversations.push(conversation);
-    return conversation;
+  async getMessages(): Promise<Message[]> {
+    return this.messages;
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
     const message: Message = {
-      id: this.currentMessageId++,
+      id: this.currentId++,
       ...insertMessage,
       timestamp: new Date(),
     };

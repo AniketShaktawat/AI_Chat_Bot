@@ -7,52 +7,23 @@ import InputForm from "@/components/chat/input-form";
 import TypingIndicator from "@/components/chat/typing-indicator";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Message, Conversation } from "@shared/schema";
-import { useState, useEffect } from "react";
+import type { Message } from "@shared/schema";
 
 export default function Chat() {
   const { toast } = useToast();
-  const [activeConversationId, setActiveConversationId] = useState<number>();
-
-  const { data: conversations = [] } = useQuery<Conversation[]>({
-    queryKey: ['/api/conversations'],
+  const { data: messages = [] } = useQuery<Message[]>({ 
+    queryKey: ['/api/messages']
   });
 
-  const { data: messages = [] } = useQuery<Message[]>({
-    queryKey: ['/api/conversations', activeConversationId, 'messages'],
-    enabled: !!activeConversationId,
-  });
-
-  const newChatMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/conversations');
-      return res.json();
-    },
-    onSuccess: (conversation) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
-      setActiveConversationId(conversation.id);
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message
-      });
-    }
-  });
-
-  const messageMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: async (content: string) => {
-      if (!activeConversationId) throw new Error("No conversation selected");
-      const res = await apiRequest('POST', `/api/conversations/${activeConversationId}/messages`, { content });
+      const res = await apiRequest('POST', '/api/messages', { content });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/conversations', activeConversationId, 'messages']
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
         variant: "destructive",
         title: "Error",
@@ -61,41 +32,21 @@ export default function Chat() {
     }
   });
 
-  // Create a new chat only once if there are no conversations
-  useEffect(() => {
-    if (conversations.length === 0 && !newChatMutation.isPending) {
-      newChatMutation.mutate();
-    }
-  }, [conversations.length]); // Only depend on the length to avoid re-runs
-
-  // Set active conversation if none is selected and conversations exist
-  useEffect(() => {
-    if (!activeConversationId && conversations.length > 0) {
-      setActiveConversationId(conversations[0].id);
-    }
-  }, [activeConversationId, conversations]);
-
   return (
     <div className="flex h-screen bg-background">
-      <ChatSidebar 
-        conversations={conversations}
-        activeConversationId={activeConversationId}
-        messages={messages}
-        onConversationSelect={setActiveConversationId}
-        onNewChat={() => newChatMutation.mutate()}
-      />
+      <ChatSidebar messages={messages} />
       <div className="flex-1 flex flex-col">
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full p-4">
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
-            {messageMutation.isPending && <TypingIndicator />}
+            {mutation.isPending && <TypingIndicator />}
           </ScrollArea>
         </div>
         <InputForm 
-          onSubmit={(content) => messageMutation.mutate(content)}
-          isLoading={messageMutation.isPending}
+          onSubmit={(content) => mutation.mutate(content)}
+          isLoading={mutation.isPending}
         />
       </div>
     </div>
