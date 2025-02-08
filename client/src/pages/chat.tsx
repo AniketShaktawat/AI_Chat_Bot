@@ -6,12 +6,14 @@ import MessageBubble from "@/components/chat/message-bubble";
 import InputForm from "@/components/chat/input-form";
 import TypingIndicator from "@/components/chat/typing-indicator";
 import ChatSidebar from "@/components/chat/chat-sidebar";
+import ProfileDialog, { type ProfileData } from "@/components/chat/profile-dialog";
 import type { Message } from "@shared/schema";
 import { useState, useEffect, useRef } from "react";
 
 export default function Chat() {
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [showProfileDialog, setShowProfileDialog] = useState(true);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => 
     crypto.randomUUID()
   );
@@ -58,6 +60,7 @@ export default function Chat() {
   const clearMutation = useMutation({
     mutationFn: async () => {
       setCurrentSessionId(crypto.randomUUID());
+      setShowProfileDialog(true);
     },
     onSuccess: () => {
       toast({
@@ -90,6 +93,11 @@ export default function Chat() {
     }
   });
 
+  const handleProfileSubmit = async (data: ProfileData) => {
+    const profileContent = `Patient Profile:\n- Age: ${data.age} years\n- Gender: ${data.gender}\n- Weight: ${data.weight} kg\n- Height: ${data.height} cm`;
+    mutation.mutate(profileContent);
+  };
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -109,6 +117,11 @@ export default function Chat() {
 
   return (
     <div className="flex h-screen bg-gray-50">
+      <ProfileDialog 
+        open={showProfileDialog} 
+        onClose={() => setShowProfileDialog(false)} 
+        onSubmit={handleProfileSubmit}
+      />
       <ChatSidebar 
         sessions={sessions}
         currentSessionId={currentSessionId}
