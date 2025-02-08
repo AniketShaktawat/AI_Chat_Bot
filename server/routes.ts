@@ -23,13 +23,16 @@ export function registerRoutes(app: Express): Server {
       const userMessage = insertMessageSchema.parse({
         role: "user",
         content: req.body.content,
+        sessionId: req.body.sessionId,
       });
       await storage.createMessage(userMessage);
 
       const messages = await storage.getMessages();
+      const sessionMessages = messages.filter(m => m.sessionId === userMessage.sessionId);
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
-        messages: messages.map(m => ({
+        messages: sessionMessages.map(m => ({
           role: m.role as "user" | "assistant",
           content: m.content,
         })),
@@ -38,6 +41,7 @@ export function registerRoutes(app: Express): Server {
       const assistantMessage = {
         role: "assistant",
         content: response.choices[0].message.content || "",
+        sessionId: userMessage.sessionId,
       };
       const savedMessage = await storage.createMessage(assistantMessage);
       res.json(savedMessage);

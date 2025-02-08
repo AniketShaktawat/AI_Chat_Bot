@@ -7,11 +7,13 @@ export const messages = pgTable("messages", {
   role: text("role").notNull(),
   content: text("content").notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
+  sessionId: text("sessionId").notNull(),
 });
 
 export const insertMessageSchema = createInsertSchema(messages).pick({
   role: true,
   content: true,
+  sessionId: true,
 });
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;

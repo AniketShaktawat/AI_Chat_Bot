@@ -5,15 +5,18 @@ import { MessageSquare, PlusCircle } from "lucide-react";
 import type { Message } from "@shared/schema";
 
 interface ChatSidebarProps {
-  messages: Message[];
+  sessions: { [key: string]: Message[] };
+  currentSessionId: string;
+  onSessionSelect: (sessionId: string) => void;
   onNewChat: () => void;
-  onConversationSelect?: () => void;
 }
 
-export default function ChatSidebar({ messages, onNewChat, onConversationSelect }: ChatSidebarProps) {
-  // Group messages by conversation (for now we have only one conversation)
-  const firstUserMessage = messages.find(m => m.role === "user")?.content;
-
+export default function ChatSidebar({ 
+  sessions, 
+  currentSessionId,
+  onSessionSelect,
+  onNewChat 
+}: ChatSidebarProps) {
   return (
     <div className="w-80 border-r bg-muted/50">
       <div className="p-4 border-b">
@@ -28,21 +31,29 @@ export default function ChatSidebar({ messages, onNewChat, onConversationSelect 
       </div>
       <ScrollArea className="h-[calc(100vh-65px)]">
         <div className="p-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2 h-auto py-3"
-            onClick={onConversationSelect}
-          >
-            <MessageSquare className="h-4 w-4" />
-            <div className="text-left">
-              <p className="line-clamp-1 text-sm">
-                {firstUserMessage || "New Chat"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {messages.length} messages
-              </p>
-            </div>
-          </Button>
+          {Object.entries(sessions).map(([sessionId, messages]) => {
+            const firstUserMessage = messages.find(m => m.role === "user")?.content;
+            const date = new Date(messages[0].timestamp).toLocaleDateString();
+
+            return (
+              <Button
+                key={sessionId}
+                variant={sessionId === currentSessionId ? "secondary" : "ghost"}
+                className="w-full justify-start gap-2 h-auto py-3 mb-1"
+                onClick={() => onSessionSelect(sessionId)}
+              >
+                <MessageSquare className="h-4 w-4" />
+                <div className="text-left">
+                  <p className="line-clamp-1 text-sm">
+                    {firstUserMessage || "New Chat"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {messages.length} messages • {date}
+                  </p>
+                </div>
+              </Button>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>

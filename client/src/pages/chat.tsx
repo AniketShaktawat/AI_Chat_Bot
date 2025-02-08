@@ -8,16 +8,24 @@ import TypingIndicator from "@/components/chat/typing-indicator";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@shared/schema";
+import { useState } from "react";
 
 export default function Chat() {
   const { toast } = useToast();
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => 
+    crypto.randomUUID()
+  );
+
   const { data: messages = [] } = useQuery<Message[]>({ 
     queryKey: ['/api/messages']
   });
 
   const mutation = useMutation({
     mutationFn: async (content: string) => {
-      const res = await apiRequest('POST', '/api/messages', { content });
+      const res = await apiRequest('POST', '/api/messages', { 
+        content,
+        sessionId: currentSessionId
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -34,34 +42,37 @@ export default function Chat() {
 
   const clearMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest('DELETE', '/api/messages');
+      setCurrentSessionId(crypto.randomUUID());
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
       toast({
         title: "New Chat Started",
         description: "You can now start a new conversation."
       });
-    },
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message
-      });
     }
   });
+
+  const currentMessages = messages.filter(m => m.sessionId === currentSessionId);
+  const sessions = messages.reduce<{ [key: string]: Message[] }>((acc, message) => {
+    if (!acc[message.sessionId]) {
+      acc[message.sessionId] = [];
+    }
+    acc[message.sessionId].push(message);
+    return acc;
+  }, {});
 
   return (
     <div className="flex h-screen bg-background">
       <ChatSidebar 
-        messages={messages} 
+        sessions={sessions}
+        currentSessionId={currentSessionId}
+        onSessionSelect={setCurrentSessionId}
         onNewChat={() => clearMutation.mutate()}
       />
       <div className="flex-1 flex flex-col">
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full p-4">
-            {messages.map((message) => (
+            {currentMessages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
             {mutation.isPending && <TypingIndicator />}
