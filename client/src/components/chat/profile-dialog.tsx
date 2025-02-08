@@ -26,10 +26,10 @@ export default function ProfileDialog({ open, onClose, onSubmit }: ProfileDialog
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      age: "",
+      age: "0", 
       gender: "male",
-      weight: "",
-      height: ""
+      weight: "0", 
+      height: "0" 
     }
   });
 

@@ -30,7 +30,7 @@ export default function Chat() {
         role: "user",
         content,
         sessionId: currentSessionId,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(), // Fix: Use Date object instead of string
       };
 
       queryClient.setQueryData<Message[]>(['/api/messages'], (old = []) => 
