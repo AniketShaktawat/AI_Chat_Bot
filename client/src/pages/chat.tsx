@@ -67,6 +67,29 @@ export default function Chat() {
     }
   });
 
+  const deleteChatMutation = useMutation({
+    mutationFn: async (sessionId: string) => {
+      await apiRequest('DELETE', `/api/messages/${sessionId}`);
+      if (sessionId === currentSessionId) {
+        setCurrentSessionId(crypto.randomUUID());
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
+      toast({
+        title: "Chat Deleted",
+        description: "The consultation has been deleted."
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
+    }
+  });
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -91,6 +114,7 @@ export default function Chat() {
         currentSessionId={currentSessionId}
         onSessionSelect={setCurrentSessionId}
         onNewChat={() => clearMutation.mutate()}
+        onDeleteChat={(sessionId) => deleteChatMutation.mutate(sessionId)}
       />
       <div className="flex-1 flex flex-col bg-white">
         <div className="p-4 border-b">

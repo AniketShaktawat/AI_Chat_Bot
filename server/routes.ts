@@ -13,8 +13,9 @@ export function registerRoutes(app: Express): Server {
     res.json(messages);
   });
 
-  app.delete("/api/messages", async (_req, res) => {
-    await storage.clearMessages();
+  app.delete("/api/messages/:sessionId", async (req, res) => {
+    const { sessionId } = req.params;
+    await storage.deleteSessionMessages(sessionId);
     res.json({ success: true });
   });
 

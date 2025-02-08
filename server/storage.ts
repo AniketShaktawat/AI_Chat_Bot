@@ -1,11 +1,12 @@
 import { messages, type Message, type InsertMessage } from "@shared/schema";
 import { db } from "./db";
-import { asc } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 export interface IStorage {
   getMessages(): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   clearMessages(): Promise<void>;
+  deleteSessionMessages(sessionId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -23,6 +24,10 @@ export class DatabaseStorage implements IStorage {
 
   async clearMessages(): Promise<void> {
     await db.delete(messages);
+  }
+
+  async deleteSessionMessages(sessionId: string): Promise<void> {
+    await db.delete(messages).where(eq(messages.sessionId, sessionId));
   }
 }
 
