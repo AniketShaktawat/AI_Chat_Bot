@@ -8,6 +8,7 @@ import TypingIndicator from "@/components/chat/typing-indicator";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import type { Message } from "@shared/schema";
 import { useState, useEffect, useRef } from "react";
+import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 
 export default function Chat() {
   const { toast } = useToast();
@@ -108,36 +109,40 @@ export default function Chat() {
   }, {});
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <ChatSidebar 
-        sessions={sessions}
-        currentSessionId={currentSessionId}
-        onSessionSelect={setCurrentSessionId}
-        onNewChat={() => clearMutation.mutate()}
-        onDeleteChat={(sessionId) => deleteChatMutation.mutate(sessionId)}
-      />
-      <div className="flex-1 flex flex-col bg-white">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Medical Consultation
-          </h2>
-          <p className="text-sm text-gray-500">
-            Chat with our AI medical assistant
-          </p>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <div ref={scrollAreaRef} className="h-full overflow-auto p-6">
-            {currentMessages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
-            {mutation.isPending && <TypingIndicator />}
-          </div>
-        </div>
-        <InputForm 
-          onSubmit={(content) => mutation.mutate(content)}
-          isLoading={mutation.isPending}
+    <ResizablePanelGroup direction="horizontal" className="h-screen">
+      <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+        <ChatSidebar 
+          sessions={sessions}
+          currentSessionId={currentSessionId}
+          onSessionSelect={setCurrentSessionId}
+          onNewChat={() => clearMutation.mutate()}
+          onDeleteChat={(sessionId) => deleteChatMutation.mutate(sessionId)}
         />
-      </div>
-    </div>
+      </ResizablePanel>
+      <ResizablePanel defaultSize={80}>
+        <div className="flex-1 flex flex-col bg-white h-full">
+          <div className="p-4 border-b">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Medical Consultation
+            </h2>
+            <p className="text-sm text-gray-500">
+              Chat with our AI medical assistant
+            </p>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <div ref={scrollAreaRef} className="h-full overflow-auto p-6">
+              {currentMessages.map((message) => (
+                <MessageBubble key={message.id} message={message} />
+              ))}
+              {mutation.isPending && <TypingIndicator />}
+            </div>
+          </div>
+          <InputForm 
+            onSubmit={(content) => mutation.mutate(content)}
+            isLoading={mutation.isPending}
+          />
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
