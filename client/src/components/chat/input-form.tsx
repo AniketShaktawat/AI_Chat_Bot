@@ -26,18 +26,22 @@ export default function InputForm({ onSubmit, isLoading }: InputFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t p-4">
+    <form onSubmit={handleSubmit} className="border-t bg-white p-4">
       <div className="flex gap-2 max-w-4xl mx-auto">
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          className="resize-none"
+          placeholder="Type your medical question..."
+          className="resize-none bg-gray-50 border-gray-200"
           rows={1}
           disabled={isLoading}
         />
-        <Button type="submit" disabled={isLoading || !content.trim()}>
+        <Button 
+          type="submit" 
+          disabled={isLoading || !content.trim()}
+          className="bg-primary hover:bg-primary/90"
+        >
           <Send className="h-4 w-4" />
         </Button>
       </div>

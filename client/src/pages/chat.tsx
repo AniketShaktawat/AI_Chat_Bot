@@ -46,8 +46,8 @@ export default function Chat() {
     },
     onSuccess: () => {
       toast({
-        title: "New Chat Started",
-        description: "You can now start a new conversation."
+        title: "New Consultation Started",
+        description: "You can now start a new consultation."
       });
     }
   });
@@ -62,16 +62,24 @@ export default function Chat() {
   }, {});
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-gray-50">
       <ChatSidebar 
         sessions={sessions}
         currentSessionId={currentSessionId}
         onSessionSelect={setCurrentSessionId}
         onNewChat={() => clearMutation.mutate()}
       />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-white">
+        <div className="p-4 border-b">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Medical Consultation
+          </h2>
+          <p className="text-sm text-gray-500">
+            Chat with our AI medical assistant
+          </p>
+        </div>
         <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full p-4">
+          <ScrollArea className="h-full p-6">
             {currentMessages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
