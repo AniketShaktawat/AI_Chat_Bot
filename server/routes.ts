@@ -13,6 +13,11 @@ export function registerRoutes(app: Express): Server {
     res.json(messages);
   });
 
+  app.delete("/api/messages", async (_req, res) => {
+    await storage.clearMessages();
+    res.json({ success: true });
+  });
+
   app.post("/api/messages", async (req, res) => {
     try {
       const userMessage = insertMessageSchema.parse({
@@ -25,7 +30,7 @@ export function registerRoutes(app: Express): Server {
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: messages.map(m => ({
-          role: m.role,
+          role: m.role as "user" | "assistant",
           content: m.content,
         })),
       });
@@ -36,7 +41,7 @@ export function registerRoutes(app: Express): Server {
       };
       const savedMessage = await storage.createMessage(assistantMessage);
       res.json(savedMessage);
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ message: error.message });
     }
   });

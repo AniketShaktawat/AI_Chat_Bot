@@ -32,9 +32,32 @@ export default function Chat() {
     }
   });
 
+  const clearMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest('DELETE', '/api/messages');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
+      toast({
+        title: "New Chat Started",
+        description: "You can now start a new conversation."
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
+    }
+  });
+
   return (
     <div className="flex h-screen bg-background">
-      <ChatSidebar messages={messages} />
+      <ChatSidebar 
+        messages={messages} 
+        onNewChat={() => clearMutation.mutate()}
+      />
       <div className="flex-1 flex flex-col">
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full p-4">

@@ -3,6 +3,7 @@ import { messages, type Message, type InsertMessage } from "@shared/schema";
 export interface IStorage {
   getMessages(): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
+  clearMessages(): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -26,6 +27,10 @@ export class MemStorage implements IStorage {
     };
     this.messages.push(message);
     return message;
+  }
+
+  async clearMessages(): Promise<void> {
+    this.messages = [];
   }
 }
 
