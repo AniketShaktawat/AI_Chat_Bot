@@ -13,7 +13,6 @@ import { useState, useEffect } from "react";
 export default function Chat() {
   const { toast } = useToast();
   const [activeConversationId, setActiveConversationId] = useState<number>();
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ['/api/conversations'],
@@ -62,15 +61,14 @@ export default function Chat() {
     }
   });
 
-  // Create a new chat only once on initial load if no conversations exist
+  // Create a new chat only once if there are no conversations
   useEffect(() => {
-    if (!initialLoadDone && conversations.length === 0 && !newChatMutation.isPending) {
-      setInitialLoadDone(true);
+    if (conversations.length === 0 && !newChatMutation.isPending) {
       newChatMutation.mutate();
     }
-  }, [conversations, initialLoadDone, newChatMutation]);
+  }, [conversations.length]); // Only depend on the length to avoid re-runs
 
-  // Set active conversation if none is selected
+  // Set active conversation if none is selected and conversations exist
   useEffect(() => {
     if (!activeConversationId && conversations.length > 0) {
       setActiveConversationId(conversations[0].id);

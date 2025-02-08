@@ -34,18 +34,19 @@ export function registerRoutes(app: Express): Server {
         throw new Error("Message content is required");
       }
 
+      // Save user message first
       const userMessage = insertMessageSchema.parse({
         conversationId,
         role: "user",
         content: req.body.content,
       });
 
-      const savedUserMessage = await storage.createMessage(userMessage);
+      await storage.createMessage(userMessage);
 
       let messages = await storage.getMessages(conversationId);
 
       try {
-        const response = await openai.chat.completions.create({
+        const completion = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: messages.map(m => ({
             role: m.role as any,
@@ -55,26 +56,32 @@ export function registerRoutes(app: Express): Server {
           max_tokens: 1000,
         });
 
-        const assistantMessage = {
+        if (!completion.choices[0]?.message?.content) {
+          throw new Error("No response from OpenAI");
+        }
+
+        const assistantMessage = insertMessageSchema.parse({
           conversationId,
           role: "assistant",
-          content: response.choices[0].message.content || "I apologize, but I couldn't generate a response.",
-        };
+          content: completion.choices[0].message.content,
+        });
+
         const savedAssistantMessage = await storage.createMessage(assistantMessage);
         res.json(savedAssistantMessage);
       } catch (error: any) {
-        console.error("OpenAI API Error:", error);
+        console.error("OpenAI API Error:", error.message);
 
-        const errorMessage = {
+        const errorMessage = insertMessageSchema.parse({
           conversationId,
           role: "assistant",
           content: "I apologize, but I encountered an error while processing your request. Please try again.",
-        };
+        });
+
         const savedErrorMessage = await storage.createMessage(errorMessage);
         res.json(savedErrorMessage);
       }
     } catch (error: any) {
-      console.error("Request Error:", error);
+      console.error("Request Error:", error.message);
       res.status(400).json({ 
         message: error.message || "An error occurred while processing your request" 
       });
