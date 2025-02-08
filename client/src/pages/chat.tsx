@@ -8,10 +8,11 @@ import TypingIndicator from "@/components/chat/typing-indicator";
 import ChatSidebar from "@/components/chat/chat-sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Chat() {
   const { toast } = useToast();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string>(() => 
     crypto.randomUUID()
   );
@@ -52,6 +53,14 @@ export default function Chat() {
     }
   });
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollArea = scrollAreaRef.current;
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+  }, [messages, mutation.isPending]);
+
   const currentMessages = messages.filter(m => m.sessionId === currentSessionId);
   const sessions = messages.reduce<{ [key: string]: Message[] }>((acc, message) => {
     if (!acc[message.sessionId]) {
@@ -79,12 +88,12 @@ export default function Chat() {
           </p>
         </div>
         <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full p-6">
+          <div ref={scrollAreaRef} className="h-full overflow-auto p-6">
             {currentMessages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
             {mutation.isPending && <TypingIndicator />}
-          </ScrollArea>
+          </div>
         </div>
         <InputForm 
           onSubmit={(content) => mutation.mutate(content)}
