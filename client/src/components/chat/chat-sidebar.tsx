@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, PlusCircle, Home, Settings, LogOut } from "lucide-react";
+import { MessageSquare, PlusCircle, Home } from "lucide-react";
 import type { Message } from "@shared/schema";
 
 interface ChatSidebarProps {
@@ -37,10 +37,6 @@ export default function ChatSidebar({
             <Home className="h-4 w-4" />
             Home
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2">
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
         </nav>
       </div>
 
@@ -48,7 +44,7 @@ export default function ChatSidebar({
 
       <div className="px-4 py-2">
         <h2 className="text-sm font-medium text-muted-foreground mb-2">Recent Consultations</h2>
-        <ScrollArea className="h-[calc(100vh-280px)]">
+        <ScrollArea className="h-[calc(100vh-220px)]">
           <div className="space-y-1">
             {Object.entries(sessions).map(([sessionId, messages]) => {
               const firstUserMessage = messages.find(m => m.role === "user")?.content;
@@ -78,13 +74,6 @@ export default function ChatSidebar({
             })}
           </div>
         </ScrollArea>
-      </div>
-
-      <div className="absolute bottom-0 w-64 p-4 border-t">
-        <Button variant="ghost" className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
-          <LogOut className="h-4 w-4" />
-          Logout
-        </Button>
       </div>
     </div>
   );
