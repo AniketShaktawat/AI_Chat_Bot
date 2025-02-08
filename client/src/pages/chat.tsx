@@ -6,7 +6,6 @@ import MessageBubble from "@/components/chat/message-bubble";
 import InputForm from "@/components/chat/input-form";
 import TypingIndicator from "@/components/chat/typing-indicator";
 import ChatSidebar from "@/components/chat/chat-sidebar";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@shared/schema";
 import { useState, useEffect, useRef } from "react";
 
@@ -23,6 +22,19 @@ export default function Chat() {
 
   const mutation = useMutation({
     mutationFn: async (content: string) => {
+      // Optimistically add user message to the UI
+      const optimisticUserMessage: Message = {
+        id: Date.now(),
+        role: "user",
+        content,
+        sessionId: currentSessionId,
+        timestamp: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData<Message[]>(['/api/messages'], (old = []) => 
+        [...old, optimisticUserMessage]
+      );
+
       const res = await apiRequest('POST', '/api/messages', { 
         content,
         sessionId: currentSessionId
@@ -38,6 +50,8 @@ export default function Chat() {
         title: "Error",
         description: error.message
       });
+      // Remove the optimistic update on error
+      queryClient.invalidateQueries({ queryKey: ['/api/messages'] });
     }
   });
 
